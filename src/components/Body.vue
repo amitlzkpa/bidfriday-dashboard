@@ -1,20 +1,14 @@
 <template>
   <div>
-    <p v-if="name !== null">
-      Hello {{ name }}
+    <p>
+      Hi {{ name }}
     </p>
-
-    <br /><br />
 
     <input type="text" v-model="newBoardName" />
     <button @click="onNewBoardClk">New Request</button>
 
     <br /><br />
-    
-    <button @click="onViewBoardClk">Show Board Items</button>
-    <p v-for="row in rows" :key="row.name">
-      {{ row.name }}
-    </p>
+
   </div>
 </template>
 
@@ -26,8 +20,7 @@ export default {
   data () {
     return {
       name: null,
-      newBoardName: "My new request",
-      rows: []
+      newBoardName: "My new request"
     };
   },
   async mounted () {
@@ -89,16 +82,6 @@ export default {
       res = await this.monday.api(mutStr);
       console.log(res.data);
 
-    },
-    async onViewBoardClk() {
-      while(!ctx) await this.wait(200);
-
-      let boardId = ctx.boardId;
-      let queryStr = `query { boards (ids: ${boardId}) { name items { name } } }`;
-      console.log(queryStr);
-      let res = await this.monday.api(queryStr);
-      console.log(res.data);
-      this.rows = res.data.boards[0].items;
     }
   }
 }
