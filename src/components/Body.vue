@@ -26,7 +26,7 @@
         <th>Total Budget</th>
         <th>Best Budget</th>
         <th>Total Items</th>
-        <th>Items Ordered</th>
+        <th>Items totalOrdered</th>
         <th>Items Delivered</th>
         <th>Bid Received</th>
         <th>Vendor Pool</th>
@@ -34,11 +34,11 @@
 
       <tr v-for="row in rows" :key="row.name">
         <td>{{ row.name }}</td>
-        <td>$42</td>
+        <td>${{ row.totalBudget }}</td>
         <td>$32</td>
-        <td>32</td>
-        <td>12</td>
-        <td>1</td>
+        <td>{{ row.totalItems }}</td>
+        <td>{{ row.totalOrdered }}</td>
+        <td>{{ row.totalDelivered }}</td>
         <td>6</td>
         <td>+</td>
       </tr>
@@ -126,14 +126,19 @@ export default {
         d.totalItems = bData.items.length;
 
         let totalBudget = 0;
+        let totalOrdered = 0;
+        let totalDelivered = 0;
         for(let i of bData.items) {
           let rateCol = i.column_values.filter(c => c.title === "Rate")[0];
           let qtyCol = i.column_values.filter(c => c.title === "Quantity")[0];
+          let statusCol = i.column_values.filter(c => c.title === "Status")[0];
           totalBudget += parseFloat(rateCol.text) * parseFloat(qtyCol.text);
+          if (statusCol.text === "Ordered") totalOrdered++;
+          if (statusCol.text === "Delivered") totalDelivered++;
         }
+        d.totalOrdered = totalOrdered;
+        d.totalDelivered = totalDelivered;
         d.totalBudget = totalBudget;
-        
-
         
         bsInDBData[bData.id] = d;
 
@@ -144,6 +149,8 @@ export default {
 
       console.log(bsInDBData);
 
+
+      this.rows = Object.values(bsInDBData);
 
       
 
