@@ -78,8 +78,11 @@ export default {
     async refresh() {
       while(!ctx) await this.wait(200);
 
+
       let q, r;
-      
+
+
+      // get all boards
       q = `query {
         boards {
           id
@@ -91,13 +94,14 @@ export default {
         }
       }`;
       r = await this.monday.api(q);
+
+      // filter relevant bidfriday request boardss
       let requestBoards = r.data.boards.filter(b => {
         return b.name !== "Request Template"
             && b.views.filter(v => v.name === "BidFriday - Requests").length > 0;
       });
 
-      
-
+      // parse overall board info and stats
       let bsInDBData = {};
 
       for(let board of requestBoards) {
@@ -118,7 +122,6 @@ export default {
         }`;
         r = await this.monday.api(q);
         let bData = r.data.boards[0];
-        console.log(bData);
         
         let d = {};
         d.name = bData.name;
@@ -142,33 +145,39 @@ export default {
         
         bsInDBData[bData.id] = d;
 
-        console.log(d);
-        console.log('----------------');
-
       }
 
-      console.log(bsInDBData);
 
+      // get info from loaded board
+      q = `query {
+        boards (ids: ${ctx.boardId}) {
+          name
+          items {
+            name
+            column_values {
+              title
+              text
+            }
+          }
+        }
+      }`;
+      r = await this.monday.api(q);
+      let contextBoards = r.data.boards[0].items;
 
-      this.rows = Object.values(bsInDBData);
-
+      // parse in-context board info
+      let bsInCtxt = {};
       
+      for(let board of contextBoards) {
+        let d = {};
+        d.name = board.name;
+        let idCol = board.column_values.filter(c => c.title === "ID")[0];
+        d.id = idCol.text;
+        bsInCtxt[d.id] = d;
+      }
 
-      // let boardId = ctx.boardId;
-      // q = `query {
-      //   boards (ids: ${boardId}) {
-      //     name
-      //     items {
-      //       name
-      //       column_values {
-      //         text
-      //       }
-      //     }
-      //   }
-      // }`;
-      // r = await this.monday.api(q);
-      // console.log(r.data);
-      // this.rows = r.data.boards[0].items;
+
+      // show info in UI
+      this.rows = Object.values(bsInDBData);
     },
     async onNewBoardClk() {
       if(!this.newBoardName || this.newBoardName === "") return;
