@@ -78,12 +78,39 @@ export default {
     async refresh() {
       while(!ctx) await this.wait(200);
 
-      let boardId = ctx.boardId;
-      let queryStr = `query { boards (ids: ${boardId}) { name items { name id } } }`;
-      console.log(queryStr);
-      let res = await this.monday.api(queryStr);
-      console.log(res.data);
-      this.rows = res.data.boards[0].items;
+      let q, r;
+      
+      q = `query {
+        boards {
+          id
+          name
+          views {
+            id
+            name
+          }
+        }
+      }`;
+      r = await this.monday.api(q);
+      let requestBoards = r.data.boards.filter(b => {
+        return b.name !== "Request Template"
+            && b.views.filter(v => v.name.toLowerCase().includes('bid friday')).length > 0;
+      });
+      console.log(requestBoards);
+
+      // let boardId = ctx.boardId;
+      // let queryStr = `query {
+      //   boards (ids: ${boardId}) {
+      //     name
+      //     items {
+      //       name
+      //       id
+      //     }
+      //   }
+      // }`;
+      // console.log(queryStr);
+      // let res = await this.monday.api(queryStr);
+      // console.log(res.data);
+      // this.rows = res.data.boards[0].items;
     },
     async onNewBoardClk() {
       if(!this.newBoardName || this.newBoardName === "") return;
