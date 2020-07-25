@@ -93,24 +93,75 @@ export default {
       r = await this.monday.api(q);
       let requestBoards = r.data.boards.filter(b => {
         return b.name !== "Request Template"
-            && b.views.filter(v => v.name.toLowerCase().includes('bid friday')).length > 0;
+            && b.views.filter(v => v.name === "BidFriday - Requests").length > 0;
       });
-      console.log(requestBoards);
+
+      
+
+      let bsInDBData = {};
+
+      for(let board of requestBoards) {
+
+        q = `query {
+          boards (ids: ${board.id}) {
+            id
+            name
+            items {
+              name
+              column_values {
+                title
+                value
+                text
+              }
+            }
+          }
+        }`;
+        r = await this.monday.api(q);
+        let bData = r.data.boards[0];
+        console.log(bData);
+        
+        let d = {};
+        d.name = bData.name;
+        d.id = bData.id;
+        d.totalItems = bData.items.length;
+
+        let totalBudget = 0;
+        for(let i of bData.items) {
+          let rateCol = i.column_values.filter(c => c.title === "Rate")[0];
+          let qtyCol = i.column_values.filter(c => c.title === "Quantity")[0];
+          totalBudget += parseFloat(rateCol.text) * parseFloat(qtyCol.text);
+        }
+        d.totalBudget = totalBudget;
+        
+
+        
+        bsInDBData[bData.id] = d;
+
+        console.log(d);
+        console.log('----------------');
+
+      }
+
+      console.log(bsInDBData);
+
+
+      
 
       // let boardId = ctx.boardId;
-      // let queryStr = `query {
+      // q = `query {
       //   boards (ids: ${boardId}) {
       //     name
       //     items {
       //       name
-      //       id
+      //       column_values {
+      //         text
+      //       }
       //     }
       //   }
       // }`;
-      // console.log(queryStr);
-      // let res = await this.monday.api(queryStr);
-      // console.log(res.data);
-      // this.rows = res.data.boards[0].items;
+      // r = await this.monday.api(q);
+      // console.log(r.data);
+      // this.rows = r.data.boards[0].items;
     },
     async onNewBoardClk() {
       if(!this.newBoardName || this.newBoardName === "") return;
