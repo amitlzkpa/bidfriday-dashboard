@@ -153,8 +153,10 @@ export default {
         boards (ids: ${ctx.boardId}) {
           name
           items {
+            id
             name
             column_values {
+              id
               title
               text
             }
@@ -164,15 +166,69 @@ export default {
       r = await this.monday.api(q);
       let contextBoards = r.data.boards[0].items;
 
+      let boardNoColId = contextBoards[0].column_values[0].id;
+
       // parse in-context board info
-      let bsInCtxt = {};
+      let bsInCtxtData = {};
       
       for(let board of contextBoards) {
         let d = {};
         d.name = board.name;
+        d.rowId = board.id;
         let idCol = board.column_values.filter(c => c.title === "ID")[0];
         d.id = idCol.text;
-        bsInCtxt[d.id] = d;
+        bsInCtxtData[d.id] = d;
+      }
+
+
+      // sync data
+      let bsDBIds = Object.keys(bsInDBData);
+      let bsCXIds = Object.keys(bsInCtxtData);
+
+      // console.log('In context');
+      // console.log(bsInCtxtData);
+      // console.log('In database');
+      // console.log(bsInDBData);
+
+      let m;
+
+      for(let bDBId of bsDBIds) {
+        if (!bsCXIds.includes(bDBId)) {
+          // add to context;
+          m = `mutation {
+              create_item (board_id: ${ctx.boardId}, item_name: "${bsInDBData[bDBId].name}") {
+                  id
+            }
+          }`;
+          r = await this.monday.api(m);
+
+          let newItemId = r.data.create_item.id;
+          let v = JSON.stringify(`"${bDBId}"`);
+
+          m = `mutation {
+            change_column_value (	board_id: ${ctx.boardId},
+                                  item_id: ${newItemId},
+                                  column_id: "${boardNoColId}",
+                                  value: ${v} ) {
+              id
+            }
+          }`;
+          r = await this.monday.api(m);
+        }
+      }
+
+      for(let bCXId of bsCXIds) {
+        if (!bsDBIds.includes(bCXId)) {
+          // remove to context
+          console.log(bsInCtxtData[bCXId]);
+          m = `mutation {
+            delete_item (item_id: ${bsInCtxtData[bCXId].rowId}) {
+              id
+            }
+          }`;
+          r = await this.monday.api(m);
+          console.log(r.data);
+        }
       }
 
 
