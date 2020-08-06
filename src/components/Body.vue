@@ -195,17 +195,46 @@ export default {
           r = await this.monday.api(m);
         } else {
           // mark it so that we don't need to recreate it again
-          correctCtxtBIds.push(bInCtxt.id);
+          correctCtxtBIds.push(corrBInDB[0].id);
         }
       }
 
 
+      // create dummy empty item for empty boards to get col ref ids
+      if (!contextBoards[0]) {
+        m = `mutation {
+            create_item (board_id: ${ctx.boardId}, item_name: "temp") {
+                id
+          }
+        }`;
+        r = await this.monday.api(m);
+        let tempItemId = r.data.create_item.id;
+
+        q = `query {
+          boards (ids: ${ctx.boardId}) {
+            items {
+              column_values {
+                id
+              }
+            }
+          }
+        }`;
+        r = await this.monday.api(q);
+        contextBoards = r.data.boards[0].items;
+        
+        m = `mutation {
+          delete_item (item_id: ${tempItemId}) {
+            id
+          }
+        }`;
+        r = await this.monday.api(m);
+      }
       // get ref ids for columns
       let boardNoColId = contextBoards[0].column_values[0].id;
 
       for(let bInDB of bsInDBData) {
         // check for board in context based on if its in db and not already in context
-        let corrBInCtxt = bsInCtxtData.filter(b => bInDB.id === b.id && !correctCtxtBIds.includes(b.id));
+        let corrBInCtxt = bsInCtxtData.filter(b => bInDB.id === b.id && correctCtxtBIds.includes(bInDB.id));
         if (corrBInCtxt.length === 0) {
           // if its not create a row and populate it
           m = `mutation {
