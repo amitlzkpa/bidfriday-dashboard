@@ -102,7 +102,7 @@ export default {
       });
 
       // parse overall board info and stats
-      let bsInDBData = {};
+      let bsInDBData = [];
 
       for(let board of requestBoards) {
 
@@ -143,7 +143,7 @@ export default {
         d.totalDelivered = totalDelivered;
         d.totalBudget = totalBudget;
         
-        bsInDBData[bData.id] = d;
+        bsInDBData.push(d);
 
       }
 
@@ -166,10 +166,8 @@ export default {
       r = await this.monday.api(q);
       let contextBoards = r.data.boards[0].items;
 
-      let boardNoColId = contextBoards[0].column_values[0].id;
-
       // parse in-context board info
-      let bsInCtxtData = {};
+      let bsInCtxtData = [];
       
       for(let board of contextBoards) {
         let d = {};
@@ -177,57 +175,58 @@ export default {
         d.rowId = board.id;
         let idCol = board.column_values.filter(c => c.title === "ID")[0];
         d.id = idCol.text;
-        bsInCtxtData[d.id] = d;
+        bsInCtxtData.push(d);
+      }
+      
+
+      let m;
+      let correctCtxtBIds = [];   // list of boards which have correct info about the board in the db
+
+      for(let bInCtxt of bsInCtxtData) {
+        // find an exact matching record for the board in db based on what's in context
+        let corrBInDB = bsInDBData.filter(b => b.id === bInCtxt.id && b.name === bInCtxt.name);
+        // delete row if not found
+        if (corrBInDB.length === 0) {
+          m = `mutation {
+            delete_item (item_id: ${bInCtxt.rowId}) {
+              id
+            }
+          }`;
+          r = await this.monday.api(m);
+        } else {
+          // mark it so that we don't need to recreate it again
+          correctCtxtBIds.push(bInCtxt.id);
+        }
       }
 
 
-      // sync data
-      let bsDBIds = Object.keys(bsInDBData);
-      let bsCXIds = Object.keys(bsInCtxtData);
+      // get ref ids for columns
+      let boardNoColId = contextBoards[0].column_values[0].id;
 
-      // console.log('In context');
-      // console.log(bsInCtxtData);
-      // console.log('In database');
-      // console.log(bsInDBData);
-
-      let m;
-
-      for(let bDBId of bsDBIds) {
-        if (!bsCXIds.includes(bDBId)) {
-          // add to context;
+      for(let bInDB of bsInDBData) {
+        // check for board in context based on if its in db and not already in context
+        let corrBInCtxt = bsInCtxtData.filter(b => bInDB.id === b.id && !correctCtxtBIds.includes(b.id));
+        if (corrBInCtxt.length === 0) {
+          // if its not create a row and populate it
           m = `mutation {
-              create_item (board_id: ${ctx.boardId}, item_name: "${bsInDBData[bDBId].name}") {
+              create_item (board_id: ${ctx.boardId}, item_name: "${bInDB.name}") {
                   id
             }
           }`;
           r = await this.monday.api(m);
 
           let newItemId = r.data.create_item.id;
-          let v = JSON.stringify(`"${bDBId}"`);
 
+          let v = JSON.stringify(`"${bInDB.id}"`);
           m = `mutation {
-            change_column_value (	board_id: ${ctx.boardId},
-                                  item_id: ${newItemId},
-                                  column_id: "${boardNoColId}",
-                                  value: ${v} ) {
-              id
-            }
-          }`;
+                change_column_value (board_id: ${ctx.boardId},
+                                      item_id: ${newItemId},
+                                      column_id: "${boardNoColId}",
+                                      value: ${v} ) {
+                id
+              }
+            }`;
           r = await this.monday.api(m);
-        }
-      }
-
-      for(let bCXId of bsCXIds) {
-        if (!bsDBIds.includes(bCXId)) {
-          // remove to context
-          console.log(bsInCtxtData[bCXId]);
-          m = `mutation {
-            delete_item (item_id: ${bsInCtxtData[bCXId].rowId}) {
-              id
-            }
-          }`;
-          r = await this.monday.api(m);
-          console.log(r.data);
         }
       }
 
