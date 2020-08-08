@@ -1,21 +1,11 @@
 <template>
   <div>
 
-    
-    <p>
-      Hi {{ name }}
-    </p>
 
-
-    <h4>New Request</h4>
     <input type="text" v-model="newBoardName" />
     <button @click="onNewBoardClk">Create</button>
 
-
-    <br /><br />
-
-
-    <button @click="refresh">Refresh</button>
+    <hr />
 
     <h4>Active Requests</h4>
 
