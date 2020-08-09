@@ -330,6 +330,12 @@ export default {
 
       await this.refresh();
 
+      await this.monday.execute("notice", { 
+        message: "Setup boards for a new request and bids. Jump over to the boards to add board views and update details.",
+        type: "success",
+        timeout: 10000,
+      });
+
     }
   }
 }
