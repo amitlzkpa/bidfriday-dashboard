@@ -77,8 +77,8 @@ export default {
 
       let storedData = JSON.parse(v.data.value);
       for(let d of storedData) {
-        bidToReq.set(d.bidsBoard.toString(), d.requestBoard.toString());
         reqToBid.set(d.requestBoard.toString(), d.bidsBoard.toString());
+        bidToReq.set(d.bidsBoard.toString(), d.requestBoard.toString());
       }
       
 
@@ -270,37 +270,65 @@ export default {
       let mutStr;
       let res;
 
+      // new request board
       mutStr = `mutation { create_board (board_name: "${this.newBoardName}", board_kind: private) { id } }`;
       res = await this.monday.api(mutStr);
 
-      let newBoardId = res.data.create_board.id;
+      let newReqBoardId = res.data.create_board.id;
 
-      mutStr = `mutation { create_column (board_id: ${newBoardId}, title: "Specifications", column_type: long_text) { id } }`;
+      mutStr = `mutation { create_column (board_id: ${newReqBoardId}, title: "Specifications", column_type: long_text) { id } }`;
       res = await this.monday.api(mutStr);
 
-      mutStr = `mutation { create_column (board_id: ${newBoardId}, title: "Units", column_type: dropdown) { id } }`;
+      mutStr = `mutation { create_column (board_id: ${newReqBoardId}, title: "Units", column_type: dropdown) { id } }`;
       res = await this.monday.api(mutStr);
 
-      mutStr = `mutation { create_column (board_id: ${newBoardId}, title: "Quantity", column_type: numbers) { id } }`;
+      mutStr = `mutation { create_column (board_id: ${newReqBoardId}, title: "Quantity", column_type: numbers) { id } }`;
       res = await this.monday.api(mutStr);
 
-      mutStr = `mutation { create_column (board_id: ${newBoardId}, title: "Rate", column_type: numbers) { id } }`;
+      mutStr = `mutation { create_column (board_id: ${newReqBoardId}, title: "Rate", column_type: numbers) { id } }`;
       res = await this.monday.api(mutStr);
 
-      mutStr = `mutation { create_column (board_id: ${newBoardId}, title: "Budget", column_type: numbers) { id } }`;
+      mutStr = `mutation { create_column (board_id: ${newReqBoardId}, title: "Budget", column_type: numbers) { id } }`;
       res = await this.monday.api(mutStr);
 
-      mutStr = `mutation { create_column (board_id: ${newBoardId}, title: "People", column_type: people) { id } }`;
+      mutStr = `mutation { create_column (board_id: ${newReqBoardId}, title: "People", column_type: people) { id } }`;
       res = await this.monday.api(mutStr);
 
-      mutStr = `mutation { create_column (board_id: ${newBoardId}, title: "Sample Images", column_type: integration) { id } }`;
+      mutStr = `mutation { create_column (board_id: ${newReqBoardId}, title: "Sample Images", column_type: integration) { id } }`;
       res = await this.monday.api(mutStr);
 
-      mutStr = `mutation { create_column (board_id: ${newBoardId}, title: "Attachments", column_type: integration) { id } }`;
+      mutStr = `mutation { create_column (board_id: ${newReqBoardId}, title: "Attachments", column_type: integration) { id } }`;
       res = await this.monday.api(mutStr);
 
-      mutStr = `mutation { create_column (board_id: ${newBoardId}, title: "Status", column_type: status) { id } }`;
+      mutStr = `mutation { create_column (board_id: ${newReqBoardId}, title: "Status", column_type: status) { id } }`;
       res = await this.monday.api(mutStr);
+
+
+      // new bids board
+      mutStr = `mutation { create_board (board_name: "${this.newBoardName}(Bids)", board_kind: private) { id } }`;
+      res = await this.monday.api(mutStr);
+
+      let newBidsBoardId = res.data.create_board.id;
+
+      mutStr = `mutation { create_column (board_id: ${newBidsBoardId}, title: "Last Updated", column_type: last_updated) { id } }`;
+      res = await this.monday.api(mutStr);
+
+      
+      let v;
+      v = await this.monday.storage.instance.getItem(bidfridayDataKey);
+
+      let storedData = JSON.parse(v.data.value);
+      storedData.push({
+        requestBoard: newReqBoardId,
+        bidsBoard: newBidsBoardId
+      });
+
+      v = await this.monday.storage.instance.setItem(bidfridayDataKey, JSON.stringify(storedData));
+      
+      reqToBid.set(newReqBoardId.toString(), newBidsBoardId.toString());
+      bidToReq.set(newBidsBoardId.toString(), newReqBoardId.toString());
+
+      await this.refresh();
 
     }
   }
