@@ -44,6 +44,9 @@
 <script>
 
 let ctx;
+let bidfridayDataKey = 'test1';
+let bidfridayRequestBoardIds = [];
+let bidfridayBidBoardIds = [];
 
 export default {
   data () {
@@ -57,8 +60,6 @@ export default {
     let res = await this.monday.api('query { me { id name country_code location url account { id name } } }');
     this.user = res.data.me;
 
-    console.log(res.data);
-
     this.monday.listen("context", async (res) => {
       ctx = res.data;
     });
@@ -70,6 +71,18 @@ export default {
     async refresh() {
       while(!ctx) await this.wait(200);
 
+
+      let v;
+      v = await this.monday.storage.instance.getItem(bidfridayDataKey);
+
+      let storedData = JSON.parse(v.data.value);
+      console.log(storedData);
+      
+      bidfridayRequestBoardIds = storedData.map(i => i.requestBoard);
+      bidfridayBidBoardIds = storedData.map(i => i.bidsBoard);
+
+      console.log(bidfridayRequestBoardIds);
+      console.log(bidfridayBidBoardIds);
 
       let q, r;
 
