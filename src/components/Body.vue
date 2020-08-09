@@ -45,8 +45,8 @@
 
 let ctx;
 let bidfridayDataKey = 'test1';
-let bidfridayRequestBoardIds = [];
-let bidfridayBidBoardIds = [];
+let reqToBid = new Map();
+let bidToReq = new Map();
 
 export default {
   data () {
@@ -76,13 +76,11 @@ export default {
       v = await this.monday.storage.instance.getItem(bidfridayDataKey);
 
       let storedData = JSON.parse(v.data.value);
-      console.log(storedData);
+      for(let d of storedData) {
+        bidToReq.set(d.bidsBoard.toString(), d.requestBoard.toString());
+        reqToBid.set(d.requestBoard.toString(), d.bidsBoard.toString());
+      }
       
-      bidfridayRequestBoardIds = storedData.map(i => i.requestBoard);
-      bidfridayBidBoardIds = storedData.map(i => i.bidsBoard);
-
-      console.log(bidfridayRequestBoardIds);
-      console.log(bidfridayBidBoardIds);
 
       let q, r;
 
@@ -101,10 +99,7 @@ export default {
       r = await this.monday.api(q);
 
       // filter relevant bidfriday request boardss
-      let requestBoards = r.data.boards.filter(b => {
-        return b.name !== "Request Template"
-            && b.views.filter(v => v.name === "BidFriday - Requests").length > 0;
-      });
+      let requestBoards = r.data.boards.filter(b => reqToBid.has(b.id));
 
       // parse overall board info and stats
       let bsInDBData = [];
