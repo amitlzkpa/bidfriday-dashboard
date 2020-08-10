@@ -67,6 +67,11 @@ export default {
 
     this.refresh();
 
+
+    let r = await this.$api.get('/api/test');
+    console.log(r);
+
+
   },
   methods: {
     async refresh() {
