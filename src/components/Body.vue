@@ -67,9 +67,6 @@ export default {
 
     this.refresh();
 
-    let r = await this.$api.get('/api/test');
-    console.log(r);
-
   },
   methods: {
     async refresh() {
@@ -84,6 +81,9 @@ export default {
         reqToBid.set(d.requestBoard.toString(), d.bidsBoard.toString());
         bidToReq.set(d.bidsBoard.toString(), d.requestBoard.toString());
       }
+
+      let d = await this.$api.post('/api/sync-boardpairs', storedData);
+      console.log(d.data);
       
 
       let q, r;
