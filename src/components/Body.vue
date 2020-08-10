@@ -4,6 +4,7 @@
 
     <input type="text" v-model="newBoardName" />
     <button @click="onNewBoardClk">Create</button>
+    <a :href="BIDSERVER_URL + '/monday-connect'" target="_blank">Link</a>
 
     <hr />
 
