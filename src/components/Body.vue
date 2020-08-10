@@ -69,10 +69,7 @@ export default {
 
   },
   methods: {
-    async refresh() {
-      while(!ctx) await this.wait(200);
-
-
+    async syncBoardPairs() {
       let v;
       v = await this.monday.storage.instance.getItem(bidfridayDataKey);
 
@@ -83,6 +80,12 @@ export default {
       }
 
       await this.$api.post('/api/sync-boardpairs', storedData);
+    },
+    async refresh() {
+      while(!ctx) await this.wait(200);
+
+
+      await this.syncBoardPairs();
       
 
       let q, r;
@@ -316,23 +319,17 @@ export default {
       mutStr = `mutation { create_column (board_id: ${newBidsBoardId}, title: "Last Updated", column_type: last_updated) { id } }`;
       res = await this.monday.api(mutStr);
 
-      
+      // save the new board pair to dbs
       let v;
       v = await this.monday.storage.instance.getItem(bidfridayDataKey);
-
       let storedData = JSON.parse(v.data.value);
       storedData.push({
         requestBoard: newReqBoardId,
         bidsBoard: newBidsBoardId
       });
-
       v = await this.monday.storage.instance.setItem(bidfridayDataKey, JSON.stringify(storedData));
 
-      await this.$api.post('/api/sync-boardpairs', storedData);
-      
-      reqToBid.set(newReqBoardId.toString(), newBidsBoardId.toString());
-      bidToReq.set(newBidsBoardId.toString(), newReqBoardId.toString());
-
+      // sync will be performed on refresh
       await this.refresh();
 
       await this.monday.execute("notice", { 
