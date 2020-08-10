@@ -1,17 +1,17 @@
 require('dotenv').config();
 
-// const PORT = process.env.PORT || 8080;
-const PORT = 3001;
+let PORT = 3000;
+if (process.env.NODE_ENV === 'production') PORT = process.env.PORT || 8080;
 
 module.exports = {
   outputDir: 'build',
   devServer: {
     disableHostCheck: true,
-    port: PORT,
+    port: PORT+1,
     progress: false,
     proxy: {
       "/api": {
-        target: `http://localhost:3000/`,
+        target: `http://localhost:${PORT}/`,
         logLevel: "debug"
       }
     }
