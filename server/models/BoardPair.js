@@ -11,7 +11,7 @@ const BoardPairSchema = new mongoose.Schema({
     type: String,
     index: true,
   },
-}, {timestamps: true});
+});
 
 
 module.exports = mongoose.model('BoardPair', BoardPairSchema);

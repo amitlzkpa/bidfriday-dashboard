@@ -82,8 +82,7 @@ export default {
         bidToReq.set(d.bidsBoard.toString(), d.requestBoard.toString());
       }
 
-      let d = await this.$api.post('/api/sync-boardpairs', storedData);
-      console.log(d.data);
+      await this.$api.post('/api/sync-boardpairs', storedData);
       
 
       let q, r;
@@ -328,6 +327,8 @@ export default {
       });
 
       v = await this.monday.storage.instance.setItem(bidfridayDataKey, JSON.stringify(storedData));
+
+      await this.$api.post('/api/sync-boardpairs', storedData);
       
       reqToBid.set(newReqBoardId.toString(), newBidsBoardId.toString());
       bidToReq.set(newBidsBoardId.toString(), newReqBoardId.toString());
